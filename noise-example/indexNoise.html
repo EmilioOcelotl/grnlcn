@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <!--<meta charset="utf‐8">-->
+    <title>Random Noise</title>
+  </head>
+  <body>
+    
+  </body>
+
+  <script>
+     
+    var AudioContext = window.AudioContext || window.webkitAudioContext; // esto será importante ? 
+    audioCtx = new AudioContext()
+    
+    start(); 
+    
+    async function start(){
+	await audioCtx.audioWorklet.addModule('random-noise-processor.js');
+	const randomNoiseNode = new AudioWorkletNode(audioCtx, 'random-noise-processor')
+	randomNoiseNode.connect(audioCtx.destination)
+    }
+    
+  </script>
+  
+</html>
