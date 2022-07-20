@@ -1,0 +1,38 @@
+var audioCtx = new AudioContext();
+
+let source, request, gainNode1; 
+
+function init(){
+    source = audioCtx.createBufferSource();
+    request = new XMLHttpRequest();
+    request.open('GET', 'audio/cello.mp3', true);
+    request.responseType = 'arraybuffer';
+    
+    gainNode1 = audioCtx.createGain();
+    
+    request.onload = function() {
+	let audioData = request.response;
+	
+	audioCtx.decodeAudioData(audioData, function(buffer) {
+            myBuffer = buffer;
+            songLength = buffer.duration;
+            source.buffer = myBuffer;
+            // source.playbackRate.value = playbackControl.value;
+	    //source.connect(gainNode1); 
+            source.connect(audioCtx.destination);
+            // source.loop = true;
+	},
+				 
+				 function(e){"Error with decoding audio data" + e.error});
+	
+    }
+    
+    request.send();
+    source.start(0);
+    
+}
+
+const startButton = document.getElementById( 'start' );
+startButton.addEventListener( 'click', init );
+
+init();

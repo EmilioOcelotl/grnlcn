@@ -1,0 +1,53 @@
+var audioCtx = new AudioContext();
+
+let source, request, gainNode, randomNum, sz, strt, flduration; 
+
+function init(){
+    source = audioCtx.createBufferSource();
+    request = new XMLHttpRequest();
+    request.open('GET', 'audio/cello.mp3', true);
+    request.responseType = 'arraybuffer';
+   
+    gainNode1 = audioCtx.createGain();
+    
+    request.onload = function() {
+	let audioData = request.response;
+	
+	audioCtx.decodeAudioData(audioData, function(buffer) {
+            myBuffer = buffer;
+            flduration = buffer.duration;
+            source.buffer = myBuffer;
+            //source.playbackRate.value = -1;
+	    source.loop = true; 
+	    source.loopStart = 9.2;
+	    source.loopEnd = 10.4;
+	    // source.detune.value = 500; 
+	    // gainNode1.value = 1; 
+	    source.connect(gainNode1); 
+            gainNode1.connect(audioCtx.destination);
+            //source.loop = true;
+	},
+				 
+				 function(e){"Error with decoding audio data" + e.error});
+	
+    }
+    
+    request.send();
+    source.start();
+    setInterval(random, 400);
+    
+}
+
+const startButton = document.getElementById( 'start' );
+startButton.addEventListener( 'click', init );
+
+function random(){
+    source.playbackRate.value = 0.5 + (Math.random() *4);
+    sz = 0.001;
+    strt = Math.random() * flduration; 
+    source.loopStart = strt;
+    source.loopEnd = strt + sz; 
+    // source.loopEnd = 9.2 + (Math.random() * 8);
+}
+
+// init();

@@ -1,0 +1,113 @@
+var audioCtx = new AudioContext();
+
+let source, request, gainNode, randomNum, sz, strt, flduration; 
+let source2, request2, gainNode2, randomNum2, sz2, strt2, flduration2; 
+
+function init(){
+
+    // normal playback grain 
+    
+    source = audioCtx.createBufferSource();
+    request = new XMLHttpRequest();
+    request.open('GET', 'audio/cello.wav', true);
+    request.responseType = 'arraybuffer';
+   
+    gainNode1 = audioCtx.createGain();
+    gainNode1.gain.setValueAtTime(0.5, audioCtx.currentTime);  
+    
+    request.onload = function() {
+	let audioData = request.response;
+	
+	audioCtx.decodeAudioData(audioData, function(buffer) {
+	    Array.prototype.reverse.call( buffer.getChannelData(0) );
+            Array.prototype.reverse.call( buffer.getChannelData(1) );
+            source.buffer = buffer;
+            // myBuffer = buffer;
+            flduration = buffer.duration;
+            //source.buffer = myBuffer;
+            // source.playbackRate.value = 1;
+	    source.loop = true; 
+	    source.loopStart = 8.1;
+	    source.loopEnd = 8.2;
+	    // source.detune.value = 500; 
+	    // gainNode1.value = 1; 
+	    source.connect(gainNode1); 
+            gainNode1.connect(audioCtx.destination);
+            //source.loop = true;
+	},
+				 
+				 function(e){"Error with decoding audio data" + e.error});
+				 
+    }
+    
+    request.send();
+    source.start();
+    
+    source2 = audioCtx.createBufferSource();
+    request2 = new XMLHttpRequest();
+    request2.open('GET', 'audio/cello.wav', true);
+    request2.responseType = 'arraybuffer';
+   
+    gainNode2 = audioCtx.createGain();
+    gainNode2.gain.setValueAtTime(0.5, audioCtx.currentTime);  
+
+    
+    request2.onload = function() {
+	let audioData = request2.response;
+	
+	audioCtx.decodeAudioData(audioData, function(buffer) {
+            myBuffer = buffer;
+            flduration2 = buffer.duration;
+            source2.buffer = myBuffer;
+            source2.playbackRate.value = 1;
+	    source2.loop = true; 
+	    source2.loopStart = 18.1;
+	    source2.loopEnd = 18.2;
+	    // source.detune.value = 500; 
+	    // gainNode1.value = 1; 
+	    source2.connect(gainNode2); 
+            gainNode2.connect(audioCtx.destination);
+            //source.loop = true;
+	},
+				 
+				 function(e){"Error with decoding audio data" + e.error});
+				 
+    }
+
+    request2.send(); 
+    source2.start(); 
+
+    setInterval(random, 1000);
+    setInterval(random2, 1000);
+    
+}
+
+const startButton = document.getElementById( 'start' );
+startButton.addEventListener( 'click', init );
+
+function random(){
+
+    // source.start(); 
+    source.playbackRate.setValueAtTime(Math.random() * 4, 1); 
+    // source.playbackRate.value = 0.125 + (Math.random() *1.5);
+    sz = 0.01;
+    strt = Math.random() * flduration; 
+    source.loopStart = strt;
+    source.loopEnd = strt + sz; 
+    // source.loopEnd = 9.2 + (Math.random() * 8);
+    // console.log(flduration*Math.random()); 
+}
+
+function random2(){
+
+    
+    source2.playbackRate.setValueAtTime(Math.random() * 2, 1); 
+    // source2.playbackRate.value = 0.125 + (Math.random() *1.5);
+    sz2 = 0.01;
+    strt2 = Math.random() * flduration2; 
+    source2.loopStart = strt2;
+    source2.loopEnd = strt2 + sz2; 
+    // source.loopEnd = 9.2 + (Math.random() * 8);
+}
+
+// init();
