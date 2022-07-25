@@ -1,6 +1,5 @@
 // const GUI = require('js/lil-gui.module.min.js');
 
-
 // Hubo que ajustar contextos
 // seleccionador entre audio input y entre muestra fija
 // la muestra fija puede ser un audio independiente de los procesamientos, si son lo mismo, a veces se queda fijado. 
@@ -8,8 +7,11 @@
 import { GUI } from './js/lil-gui.module.min.js';
 var audioCtx = new AudioContext();
 
+// por sí mismo la instancia de estos módulos podría ser una clase 
+
 let source, request, gainNode, randomNum, sz, strt, flduration; 
 let source2, request2, gainNode2, randomNum2, sz2, strt2, flduration2; 
+let source3, request3, gainNode3, randomNum3, sz3, strt3, flduration3; 
 
 let bufferLengthAnalyser; 
 
@@ -24,7 +26,7 @@ let sphere, sphereCopy;
 let analyser, dataArray; 
 let light, light2; 
 
-let mute = true; 
+let mute = false; 
 
 function init(){
 
@@ -119,7 +121,6 @@ function animate(){
     light2.position.x = Math.sin( time2 * 0.7/2 ) * -24;
     light2.position.y = Math.cos( time2* 0.5/2 ) * -15;
     light2.position.z = Math.cos( time2 * 0.3/2 ) * -24;
-
     
 }
 
@@ -163,12 +164,13 @@ var setup = function SetUp(sampleRate) {
     var pruebaGrain = webaudio.audiocontext.createGain(); 
 
     // aquí es donde se tienen que crear los objetos con el contexto de audio
-
     // cerrar el otro contexto de audio 
     webaudio.audiocontext.close();
     // asignar el nuevo contexto de audio a la librería 
     webaudio.audiocontext = audioCtx;
     // webaudio.audioinput.disconnect(webaudio.audiocontext.destination);    
+    //audioinput.connect(self.node);
+    // webaudio.audioinput.disconnect(webaudio.node); // esto podría funcionar para desactivar el el mic  
 
     console.log(webaudio); 
     // console.log(pruebaGrain); 
@@ -176,7 +178,6 @@ var setup = function SetUp(sampleRate) {
 };
 
 var callback = function CallBack(input,output,n) {
-
    
     var detection = onsetdetector.next( input.monoinput );
     
@@ -204,10 +205,8 @@ function onWindowResize() {
 
     windowHalfX = window.innerWidth / 2;
     windowHalfY = window.innerHeight / 2;
-    
     camera.aspect = window.innerWidth / window.innerHeight;
-    camera.updateProjectionMatrix();
-    
+    camera.updateProjectionMatrix();   
     renderer2.setSize( window.innerWidth, window.innerHeight );
     
 }
@@ -215,33 +214,35 @@ function onWindowResize() {
 function createPanel(){
     const panel = new GUI({width:310});
     const folder1 = panel.addFolder( 'Reproducción' );
-    
     var objRepro = {iniciar:repro}
     folder1.add(objRepro,'iniciar'); 
-    
     var objAlto = {detener:stop}
     folder1.add(objAlto,'detener');
-    
-    const folder2 = panel.addFolder( 'Grabación' );
-    const folder3 = panel.addFolder( 'Transformación' );
+    // const folder2 = panel.addFolder( 'Grabación' );
+    // const folder3 = panel.addFolder( 'Transformación' );
 }
 
 
 function repro(){
     console.log("iniciar o desmutear");
     gainNode.gain.setValueAtTime(0.5, audioCtx.currentTime);  
-    gainNode2.gain.setValueAtTime(0.5, audioCtx.currentTime);  
+    gainNode2.gain.setValueAtTime(0.5, audioCtx.currentTime);
+    gainNode3.gain.setValueAtTime(0.5, audioCtx.currentTime);  
     mute = false; 
 }
 
 function stop(){
     console.log("detener o más bien mutear");
     gainNode.gain.setValueAtTime(0, audioCtx.currentTime);  
-    gainNode2.gain.setValueAtTime(0, audioCtx.currentTime);  
+    gainNode2.gain.setValueAtTime(0, audioCtx.currentTime);
+    gainNode3.gain.setValueAtTime(0.5, audioCtx.currentTime);  
     mute = true; 
 }
 
 function samples(){
+
+    // Primera fuente 
+
     source = audioCtx.createBufferSource();
     request = new XMLHttpRequest();
     request.open('GET', 'audio/cello.mp3', true);
@@ -276,7 +277,7 @@ function samples(){
 
 	    // si es el mismo sonido procedasado lo que detona los cambios en el sonido procesado, entonces puede que en algún momento se quede estático
 	    
-	    gainNode.connect(webaudio.node); // 
+	    // gainNode.connect(webaudio.node); // 
             //source.loop = true;
 	},
 				 
@@ -286,6 +287,8 @@ function samples(){
     
     request.send();
     source.start();
+
+    // Segunda fuente 
     
     source2 = audioCtx.createBufferSource();
     request2 = new XMLHttpRequest();
@@ -294,7 +297,6 @@ function samples(){
    
     gainNode2 = audioCtx.createGain();
     gainNode2.gain.setValueAtTime(0.5, audioCtx.currentTime);  
-
     
     request2.onload = function() {
 	let audioData2 = request2.response;
@@ -321,23 +323,60 @@ function samples(){
 	},
 				 
 				 function(e){"Error with decoding audio data" + e.error});
-
-	
-	
     }
-
     
     analyser = audioCtx.createAnalyser();
     source.connect(analyser);
-    source2.connect(analyser); 
+    source2.connect(analyser);
+    source3.connect(analyser); 
     analyser.fftSize = 1024;
     bufferLengthAnalyser = analyser.frequencyBinCount;
     dataArray = new Uint8Array(bufferLengthAnalyser);
     analyser.getByteTimeDomainData(dataArray)
     analyser.smoothingTimeConstant = 0.95;
 
-
     request2.send(); 
     source2.start(); 
 
+    // Tercera fuente 
+    
+    source3 = audioCtx.createBufferSource();
+    request3 = new XMLHttpRequest();
+    request3.open('GET', 'audio/cello.mp3', true);
+    request3.responseType = 'arraybuffer';
+   
+    gainNode3 = audioCtx.createGain();
+    gainNode3.gain.setValueAtTime(0.5, audioCtx.currentTime);  
+    
+    request3.onload = function() {
+	let audioData3 = request3.response;
+	
+	audioCtx.decodeAudioData(audioData3, function(buffer) { // esto igual y no es realmente necesario  
+            //myBuffer = buffer;
+            flduration3 = buffer.duration;
+            source3.buffer = buffer;
+            //source3.playbackRate.value = 1;
+	    source3.loop = true; 
+	    //source3.loopStart = 18.1;
+	    // source3.loopEnd = 18.2;
+	    // source.detune.value = 500; 
+	    // gainNode1.value = 1; 
+	    source3.connect(gainNode3); 
+            gainNode3.connect(audioCtx.destination);
+
+	    
+	    // Parece ser que no se pueden conectar porque son de distintos contextos de audio, entonces hay que unificarlos 
+
+	    gainNode3.connect(webaudio.node); 
+
+            //source.loop = true;
+	},
+				 
+				 function(e){"Error with decoding audio data" + e.error});
+    }
+    
+    request3.send(); 
+    source3.start(); 
+
+    
 }
